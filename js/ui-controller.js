@@ -255,6 +255,46 @@ toggleStockPaymentFields: () => {
     }
 },
 
+// Hàm xử lý đóng/mở menu dropdown
+   toggleDropdown: (event, id) => {
+    if (event) {
+        event.preventDefault();
+        event.stopPropagation();
+    }
+    
+    const target = document.getElementById(id);
+    if (!target) return;
+
+    // 1. Đóng các dropdown khác
+    const dropdowns = ['dropdown-manage', 'dropdown-user'];
+    dropdowns.forEach(dId => {
+        if (dId !== id) {
+            const el = document.getElementById(dId);
+            if (el) el.classList.add('hidden');
+        }
+    });
+
+    // 2. Bật/Tắt menu hiện tại
+    target.classList.toggle('hidden');
+
+    // 3. TỰ ĐỘNG ẨN KHI RÊ CHUỘT RA NGOÀI (Bổ sung mới)
+    // Nếu menu đang hiển thị, gắn sự kiện lắng nghe chuột rời đi
+    if (!target.classList.contains('hidden')) {
+        target.onmouseleave = () => {
+            target.classList.add('hidden');
+        };
+        
+        // Gắn thêm cho cả nút bấm để nếu chuột rời cả nút lẫn menu thì ẩn
+        const parent = target.closest('.relative');
+        if (parent) {
+            parent.onmouseleave = () => {
+                target.classList.add('hidden');
+            };
+        }
+    }
+},
+
+
     toggleAddService: () => {
         const box = document.getElementById('add-service-box');
         const select = document.getElementById('add-service-id');
