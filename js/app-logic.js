@@ -131,75 +131,138 @@ window.app = {
         if (!header) return;
         let hH = '';
         for(let i = 6; i <= 22; i++) {
-            hH += `<div class="flex-1 text-[10px] font-black text-slate-300 border-l pl-1">${i}:00</div>`;
+            hH += `<div class="flex-1 text-[10px] font-black text-slate-500 border-l pl-1">${i}:00</div>`;
         }
         header.innerHTML = hH;
     },
 
-    renderCourts: () => {
-    const container = document.getElementById('grid-courts');
-    if (!container) return;
-    
-    // Grid 4 cột sát nhau, giảm gap xuống tối đa để card nhỏ lại
-    container.className = "grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-3 p-2";
-
-    const courts = window.dataCache.courts || {};
-    let html = '';
-    
-    Object.entries(courts).forEach(([id, c]) => {
+   // Component tạo Card riêng lẻ
+    createCourtCard: (id, c) => {
         const isBusy = c.Trang_Thai === "Đang chơi";
         const isMaint = c.Trang_Thai === "Bảo trì";
         const deposit = Number(c.Da_Coc || 0);
 
-        // Thiết lập màu sắc theo trạng thái (Dùng màu đậm để chuyên nghiệp)
-        const themeColor = isBusy ? 'border-blue-600' : isMaint ? 'border-slate-300' : 'border-emerald-500';
-        
-        html += `
-            <div onclick="${isBusy ? `app.showDetail('${id}')` : isMaint ? '' : `(function(){ document.getElementById('checkin-court-id').value='${id}'; ui.openModal('checkin')})()`}" 
-                 class="relative bg-white rounded-2xl border-b-4 ${themeColor} shadow-sm p-3 transition-all duration-200 hover:shadow-md hover:-translate-y-1 cursor-pointer">
-                
-                <div class="flex justify-between items-center mb-2">
-                    <span class="text-[10px] font-black text-slate-800 uppercase tracking-tighter">${c.Ten_San}</span>
-                    ${isBusy ? `<span class="h-1.5 w-1.5 rounded-full bg-blue-600 animate-pulse"></span>` : ''}
+        // Cấu hình theme dựa trên trạng thái
+        let config = {
+            class: 'card-ready',
+            label: 'SẴN SÀNG',
+            labelClass: 'text-blue-600',
+            btnText: 'VÀO SÂN',
+            btnClass: 'bg-blue-600',
+            icon: 'fa-circle-check'
+        };
+
+        if (isBusy) {
+            config = {
+                class: 'card-busy',
+                label: 'ĐANG CHƠI',
+                labelClass: 'text-red-600',
+                btnText: 'QUẢN LÝ',
+                btnClass: 'bg-red-600',
+                icon: 'fa-play-circle'
+            };
+        } else if (isMaint) {
+            config = {
+                class: 'card-maint',
+                label: 'BẢO TRÌ',
+                labelClass: 'text-slate-500',
+                btnText: 'TẠM DỪNG',
+                btnClass: 'bg-slate-400',
+                icon: 'fa-screwdriver-wrench'
+            };
+        }
+
+        const card = document.createElement('div');
+        card.className = `sport-card-rect ${config.class} p-4 cursor-pointer relative group overflow-hidden shadow-sm`;
+        card.dataset.id = id;
+        card.dataset.status = c.Trang_Thai;
+
+        // Nội dung card sử dụng Template String nhưng không chứa onclick
+        card.innerHTML = `
+            <img src="image_8e8406.png" class="court-bg-icon-top-right w-20 opacity-5 absolute top-2 right-2" alt="bg">
+            <div class="flex flex-col h-full z-10 relative">
+                <div class="flex justify-between items-start mb-2">
+                    <div class="flex flex-col">
+                        <span class="text-[13px] font-[900] text-slate-800 uppercase tracking-tighter">${c.Ten_San}</span>
+                        <span class="text-[8px] font-black ${config.labelClass} uppercase tracking-widest mt-0.5 flex items-center gap-1">
+                            <i class="fa-solid ${config.icon} text-[7px]"></i> ${config.label}
+                        </span>
+                    </div>
+                    ${isBusy ? `<span class="h-2 w-2 rounded-full status-dot-active"></span>` : ''}
                 </div>
 
-                <div class="min-h-[45px] flex flex-col justify-center mb-2">
+                <div class="flex-1 flex flex-col justify-center py-2">
                     ${isBusy ? `
-                        <div class="border-l-2 border-blue-600 pl-2">
-                            <h4 class="text-[11px] font-[900] text-slate-900 uppercase leading-none truncate">${c.Ten_Khach || 'Khách lẻ'}</h4>
-                            <div class="flex items-center gap-2 mt-1">
-                                <span class="text-[9px] font-black text-blue-700">${c.Gio_Vao || '--:--'}</span>
-                                ${c.SDT ? `<span class="text-[8px] font-bold text-slate-400">/ ${c.SDT}</span>` : ''}
+                        <div>
+                            <p class="text-[13px] font-[900] text-slate-900 uppercase truncate mb-1">${c.Ten_Khach || 'Khách lẻ'}</p>
+                            <div class="flex items-center gap-2">
+                                <span class="text-[10px] font-black text-red-600 flex items-center bg-white px-2 py-0.5 rounded-md border border-red-50">
+                                    <i class="fa-regular fa-clock mr-1"></i> ${c.Gio_Vao || '--:--'}
+                                </span>
                             </div>
                         </div>
                     ` : `
-                        <div class="text-center">
-                            <span class="text-[9px] font-black text-slate-300 uppercase italic tracking-widest">${isMaint ? 'Maint' : 'Sẵn sàng'}</span>
+                        <div class="flex items-center opacity-20 group-hover:opacity-100 transition-opacity">
+                            <span class="text-[9px] font-black text-slate-400 italic uppercase tracking-widest">Sẵn sàng đón khách</span>
                         </div>
                     `}
                 </div>
 
-                <div class="flex justify-between items-center pt-2 border-t border-slate-50">
-                    <div class="flex-1">
+                <div class="flex items-center justify-between pt-2 border-t border-slate-200/50 mt-auto">
+                    <div class="min-h-[14px]">
                         ${isBusy && deposit > 0 ? `
-                            <span class="text-[9px] font-black text-orange-600 bg-orange-50 px-1.5 py-0.5 rounded border border-orange-100">
-                                <i class="fa-solid fa-wallet text-[7px] mr-1"></i>${deposit.toLocaleString()}
+                            <span class="text-[10px] font-black text-orange-600 tracking-tighter">
+                                <i class="fa-solid fa-wallet mr-1 text-[8px]"></i>${deposit.toLocaleString()}
                             </span>
-                        ` : ''}
+                        ` : `<i class="fa-solid fa-table-tennis-paddle-ball text-slate-200 text-xs"></i>`}
                     </div>
-
-                    <button class="h-6 px-3 rounded-lg font-black text-[8px] uppercase tracking-wider transition-all
-                        ${isBusy ? 'bg-slate-100 text-slate-600 hover:bg-blue-600 hover:text-white' : 
-                          isMaint ? 'hidden' : 'bg-emerald-600 text-white shadow-lg shadow-emerald-100'}">
-                        ${isBusy ? 'Sửa' : 'Vào'}
+                    <button class="h-7 px-4 rounded-lg font-black text-[9px] uppercase tracking-wider text-white shadow-sm transition-all active:scale-95 ${config.btnClass}">
+                        ${config.btnText}
                     </button>
                 </div>
             </div>`;
-    });
-    
-    container.innerHTML = html;
-    if (window.app.renderCourtsTable) window.app.renderCourtsTable();
-},
+        return card;
+    },
+
+    // Hàm Render chính dùng DocumentFragment để tối ưu tốc độ
+    renderCourts: () => {
+        const container = document.getElementById('grid-courts');
+        if (!container) return;
+        
+        container.className = "grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-5 p-2";
+        const courts = window.dataCache.courts || {};
+        
+        // Sử dụng Fragment để tránh reflow nhiều lần
+        const fragment = document.createDocumentFragment();
+        
+        Object.entries(courts).forEach(([id, c]) => {
+            fragment.appendChild(app.createCourtCard(id, c));
+        });
+        
+        container.innerHTML = '';
+        container.appendChild(fragment);
+
+        // Event Delegation: Gắn sự kiện click 1 lần duy nhất tại container cha
+        if (!container.dataset.eventInitialized) {
+            container.addEventListener('click', (e) => {
+                const card = e.target.closest('.sport-card-rect');
+                if (!card) return;
+                
+                const id = card.dataset.id;
+                const status = card.dataset.status;
+
+                if (status === "Đang chơi") {
+                    app.showDetail(id);
+                } else if (status === "Sẵn sàng") {
+                    document.getElementById('checkin-court-id').value = id;
+                    ui.openModal('checkin');
+                } else {
+                    console.log("Sân đang bảo trì");
+                }
+            });
+            container.dataset.eventInitialized = "true";
+        }
+    },
 
     renderCourtsTable: () => {
         const tableBody = document.getElementById('list-courts-table');
@@ -228,36 +291,64 @@ window.app = {
     },
 
     reloadTimeline: () => {
-        const vD = document.getElementById('view-date')?.value;
-        const container = document.getElementById('timeline-rows');
-        if (!container || !vD) return;
-        let html = '';
-        const courts = window.dataCache.courts || {};
-        const bookings = window.dataCache.bookings || {};
-        Object.entries(courts).forEach(([cId, court]) => {
-            const bks = Object.entries(bookings).filter(([id, b]) => b.Court_ID === cId && b.Ngay === vD);
-            html += `<div class="flex items-center gap-2">
-                <div class="w-24 font-black text-[10px] uppercase truncate text-slate-500">${court.Ten_San}</div>
-                <div class="flex-1 h-10 bg-slate-100 rounded-xl relative timeline-grid border border-slate-200/50">`;
-            for(let i = 6; i <= 22; i++) {
-                html += `<div onclick="ui.clickTimeline('${cId}', ${i})" class="absolute h-full hover:bg-blue-500/10 transition-colors" style="left:${(i - 6) * 100 / 17}%; width:${100 / 17}%; z-index:10; cursor:cell;"></div>`;
-            }
-            bks.forEach(([id, b]) => {
-                const [hS, mS] = (b.Bat_Dau || "06:00").split(':').map(Number);
-                const [hE, mE] = (b.Ket_Thuc || "07:00").split(':').map(Number);
-                const left = (hS - 6 + mS / 60) * (100 / 17);
-                const width = (hE - hS + (mE - mS) / 60) * (100 / 17);
-                html += `<div onclick="event.stopPropagation(); ui.openModal('manage-booking', '${id}', ${JSON.stringify(b).replace(/"/g, '&quot;')})" 
-                              class="timeline-slot bg-indigo-600 text-white text-[8px] flex flex-col justify-center px-1 shadow-sm border-l-2 border-indigo-300" 
-                              style="left:${left}%; width:${width}%; z-index:30; position:absolute;">
-                            <span class="truncate font-black uppercase italic">${b.Ten_Khach}</span>
-                         </div>`;
-            });
-            html += `</div></div>`;
-        });
-        container.innerHTML = html;
-    },
+    const vD = document.getElementById('view-date')?.value;
+    const container = document.getElementById('timeline-rows');
+    if (!container || !vD) return;
+    
+    let html = '';
+    const courts = window.dataCache.courts || {};
+    const bookings = window.dataCache.bookings || {};
+    
+    Object.entries(courts).forEach(([cId, court]) => {
+        const isMaint = court.Trang_Thai === "Bảo trì";
+        const bks = Object.entries(bookings).filter(([id, b]) => b.Court_ID === cId && b.Ngay === vD);
+        
+        html += `<div class="flex items-center gap-2 ${isMaint ? 'opacity-60' : ''}">
+            <div class="w-24 font-black text-[10px] uppercase truncate ${isMaint ? 'text-slate-300' : 'text-slate-500'}">${court.Ten_San}</div>
+            
+            <div class="flex-1 h-10 ${isMaint ? 'bg-slate-200 timeline-grid-maint' : 'bg-slate-100'} rounded-xl relative timeline-grid border border-slate-200/50">`;
 
+        // 1. Vẽ các ô lưới thời gian (Vùng nhấp để đặt lịch)
+        for(let i = 6; i <= 22; i++) {
+            if (isMaint) {
+                html += `<div onclick="alert('⚠️ Sân ${court.Ten_San} hiện đang bảo trì, không thể đặt lịch!')" 
+                              class="absolute h-full z-10 cursor-not-allowed" 
+                              style="left:${(i - 6) * 100 / 17}%; width:${100 / 17}%;"></div>`;
+            } else {
+                html += `<div onclick="ui.clickTimeline('${cId}', ${i})" 
+                              class="absolute h-full hover:bg-blue-500/10 transition-colors z-10 cursor-cell" 
+                              style="left:${(i - 6) * 100 / 17}%; width:${100 / 17}%;"></div>`;
+            }
+        }
+
+        // 2. Vẽ các lịch đã đặt sẵn
+        bks.forEach(([id, b]) => {
+            const [hS, mS] = (b.Bat_Dau || "06:00").split(':').map(Number);
+            const [hE, mE] = (b.Ket_Thuc || "07:00").split(':').map(Number);
+            const left = (hS - 6 + mS / 60) * (100 / 17);
+            const width = (hE - hS + (mE - mS) / 60) * (100 / 17);
+            
+            // Hiển thị 1 dòng nếu thanh dài (> 8% độ rộng), ngược lại tự xuống dòng nhờ flex-wrap
+            html += `
+                <div onclick="event.stopPropagation(); ui.openModal('manage-booking', '${id}', ${JSON.stringify(b).replace(/"/g, '&quot;')})" 
+                     class="timeline-slot bg-blue-600 text-white flex flex-wrap items-center content-center px-1.5 shadow-sm border-l-2 border-white/30 overflow-hidden" 
+                     style="left:${left}%; width:${width}%; z-index:30; position:absolute; height: 32px; top: 4px; border-radius: 6px; cursor: pointer;">
+                    
+                    <span class="font-black uppercase text-[8px] truncate mr-1" style="max-width: 100%;">
+                        ${b.Ten_Khach}
+                    </span>
+                    
+                    <span class="text-[7px] font-bold opacity-90 whitespace-nowrap">
+                        (${b.Bat_Dau}-${b.Ket_Thuc})
+                    </span>
+                </div>`;
+        });
+        
+        html += `</div></div>`;
+    });
+    
+    container.innerHTML = html;
+},
     // --- HÀM LƯU LỊCH ĐẶT SÂN ---
    saveBooking: async () => {
     const courtId = document.getElementById('b-court-id').value;
@@ -683,46 +774,62 @@ window.app = {
     updateServiceQty: async (courtId, sid, change) => {
     try {
         const court = window.dataCache.courts[courtId];
-        if (!court) return;
+        const originalService = window.dataCache.services[sid];
+        if (!court || !originalService) return;
 
         let serviceData = null;
         let finalPath = "";
 
-        // Dò tìm Path như bản trước
-        if (court.Playing && court.Playing.Services && court.Playing.Services[sid]) {
+        // 1. Xác định đường dẫn dữ liệu tại sân
+        if (court.Playing?.Services?.[sid]) {
             serviceData = court.Playing.Services[sid];
             finalPath = `courts/${courtId}/Playing/Services/${sid}`;
-        } else if (court.Dich_Vu && court.Dich_Vu[sid]) {
+        } else if (court.Dich_Vu?.[sid]) {
             serviceData = court.Dich_Vu[sid];
             finalPath = `courts/${courtId}/Dich_Vu/${sid}`;
         }
 
         if (!serviceData || !finalPath) return;
 
-        const currentQty = Number(serviceData.So_Luong || serviceData.SL || serviceData.Qty || 0);
-        const newQty = currentQty + change;
-        const serviceRef = window.ref(window.db, finalPath);
+        const currentQtyInCourt = Number(serviceData.So_Luong || 0);
+        const newQtyInCourt = currentQtyInCourt + change;
+        const isProduct = originalService.Loai_DV !== "DỊCH VỤ";
 
-        if (newQty <= 0) {
-            if (confirm(`Xóa món này?`)) {
-                await window.remove(serviceRef);
+        // 2. LOGIC TĂNG (+1): Trừ kho ảo trong Cache
+        if (change === 1) {
+            if (isProduct && (Number(originalService.Ton_Kho) || 0) <= 0) {
+                return alert("Kho không đủ hàng!");
             }
+            if (isProduct) originalService.Ton_Kho = Number(originalService.Ton_Kho) - 1;
+        }
+
+        // 3. LOGIC GIẢM (-1) HOẶC XÓA (về 0)
+        if (newQtyInCourt <= 0) {
+            if (!confirm(`Xác nhận xóa món này khỏi sân?`)) return;
+            // HOÀN KHO ẢO: Cộng trả lại toàn bộ số lượng đang có tại sân vào kho tổng
+            if (isProduct) {
+                originalService.Ton_Kho = Number(originalService.Ton_Kho || 0) + currentQtyInCourt;
+            }
+            await window.remove(window.ref(window.db, finalPath));
         } else {
-            await window.update(serviceRef, { 
-                So_Luong: newQty, SL: newQty, Qty: newQty 
+            // Nếu chỉ giảm số lượng (vẫn còn > 0): Cộng trả 1 đơn vị vào kho tổng
+            if (change === -1 && isProduct) {
+                originalService.Ton_Kho = Number(originalService.Ton_Kho || 0) + 1;
+            }
+
+            // Cập nhật số lượng mới tại Sân trên Firebase
+            await window.update(window.ref(window.db, finalPath), { 
+                So_Luong: newQtyInCourt, SL: newQtyInCourt, Qty: newQtyInCourt 
             });
         }
 
-        // --- DÒNG QUAN TRỌNG NHẤT: Cập nhật lại Cache và Vẽ lại giao diện ---
-        // Cập nhật tạm thời vào cache để giao diện nhảy số ngay lập tức
-        serviceData.So_Luong = newQty; 
-        serviceData.SL = newQty;
-        
-        // Gọi lại hàm hiển thị để vẽ lại danh sách món với số lượng mới
-        app.showDetail(courtId);
+        // 4. ĐỒNG BỘ GIAO DIỆN
+        if (app.renderPosProducts) app.renderPosProducts(); // Cập nhật số Tồn hiển thị
+        if (app.renderServicesTable) app.renderServicesTable(); // Cập nhật bảng kho
+        app.showDetail(courtId); // Vẽ lại bảng dịch vụ tại sân
 
     } catch (e) {
-        console.error(e);
+        console.error("Lỗi cập nhật dịch vụ sân:", e);
     }
 },
 
@@ -1076,49 +1183,40 @@ renderPosProducts: (keyword = "") => {
     },
 
    // --- HÀM THÊM SẢN PHẨM VÀO GIỎ HÀNG POS ---
-addToCart: async (productId) => {
-    try {
-        const product = window.dataCache.services[productId];
-        if (!product) return;
+addToCart: (productId) => {
+    const product = window.dataCache.services[productId];
+    if (!product) return;
 
-        // 1. Kiểm tra loại dịch vụ (Nếu là "DỊCH VỤ" thì không trừ kho)
-        const isDichVu = product.Loai_DV === "DỊCH VỤ";
-        const currentStock = Number(product.Ton_Kho || 0);
+    const isDichVu = product.Loai_DV === "DỊCH VỤ";
+    const currentStock = Number(product.Ton_Kho || 0);
 
-        // 2. Chặn nếu sản phẩm hết hàng
-        if (!isDichVu && currentStock <= 0) {
-            alert(`Sản phẩm "${product.Ten_Dich_Vu}" đã hết hàng!`);
-            return;
-        }
-
-        // 3. THỰC HIỆN TRỪ KHO TRÊN FIREBASE
-        if (!isDichVu) {
-            const stockRef = window.ref(window.db, `services/${productId}/Ton_Kho`);
-            // Dùng runTransaction để đảm bảo trừ kho chính xác nếu nhiều người cùng bấm
-            await window.runTransaction(stockRef, (current) => {
-                return (Number(current) || 0) - 1;
-            });
-        }
-
-        // 4. CẬP NHẬT VÀO GIỎ HÀNG (Logic cũ của bạn)
-        const existingItem = window.posCart.find(item => item.id === productId);
-        if (existingItem) {
-            existingItem.qty += 1;
-        } else {
-            window.posCart.push({
-                id: productId,
-                name: product.Ten_Dich_Vu || "Sản phẩm", 
-                price: Number(product.Gia_Ban || 0),
-                qty: 1
-            });
-        }
-
-        // 5. Vẽ lại giao diện giỏ hàng
-        app.renderPOSCart();
-
-    } catch (e) { 
-        console.error("Lỗi khi thêm và trừ kho:", e); 
+    // 1. Kiểm tra kho (Chỉ kiểm tra trên Cache)
+    if (!isDichVu && currentStock <= 0) {
+        alert(`Sản phẩm "${product.Ten_Dich_Vu}" đã hết hàng!`);
+        return;
     }
+
+    // 2. TRỪ KHO ẢO TRÊN CACHE (Không dùng Transaction ở đây)
+    if (!isDichVu) {
+        product.Ton_Kho = currentStock - 1;
+    }
+
+    // 3. CẬP NHẬT GIỎ HÀNG
+    const existingItem = window.posCart.find(item => item.id === productId);
+    if (existingItem) {
+        existingItem.qty += 1;
+    } else {
+        window.posCart.push({
+            id: productId,
+            name: product.Ten_Dich_Vu || "Sản phẩm", 
+            price: Number(product.Gia_Ban || 0),
+            qty: 1
+        });
+    }
+
+    // 4. Vẽ lại cả 2 để đồng bộ số liệu hiển thị
+    app.renderPOSCart();
+    app.renderPosProducts(); 
 },
     searchMemberForCheckin: (val) => {
     const input = val.trim().toLowerCase();
@@ -1382,52 +1480,60 @@ selectMemberForCheckin: (id, name, phone) => {
 
     // --- BỔ SUNG: Đẩy món vào Firebase của sân ---
     addServiceToCourt: async () => {
-        const sid = document.getElementById('add-service-id').value; 
-        const qty = parseInt(document.getElementById('add-service-qty').value) || 1;
-        const courtId = window.selectedCourtId; 
+    const sid = document.getElementById('add-service-id').value; 
+    const qty = parseInt(document.getElementById('add-service-qty').value) || 1;
+    const courtId = window.selectedCourtId; 
 
-        if(!courtId || !sid) return alert("Vui lòng chọn món từ danh sách!");
-        
-        const item = window.dataCache.services[sid];
-        if(!item) return;
+    if(!courtId || !sid) return alert("Vui lòng chọn món từ danh sách!");
+    
+    // Lấy dữ liệu từ Cache (Nguồn sự thật hiện tại)
+    const item = window.dataCache.services[sid];
+    if(!item) return;
 
-        // Kiểm tra kho nếu không phải loại DỊCH VỤ
-        if (item.Loai_DV !== "DỊCH VỤ" && (item.Ton_Kho || 0) < qty) {
-            return alert("Kho không đủ hàng!");
-        }
+    // 1. KIỂM TRA KHO ẢO TRÊN CACHE
+    if (item.Loai_DV !== "DỊCH VỤ" && (Number(item.Ton_Kho) || 0) < qty) {
+        return alert("Kho không đủ hàng!");
+    }
 
+    try {
+        // 2. CHỈ CẬP NHẬT DỊCH VỤ VÀO SÂN TRÊN FIREBASE
+        // (Không trừ kho hệ thống ở đây)
         const serviceRef = window.ref(window.db, `courts/${courtId}/Dich_Vu/${sid}`);
         
-        try {
-            await window.runTransaction(serviceRef, (cur) => {
-                if(cur) { 
-                    cur.So_Luong = (Number(cur.So_Luong) || 0) + qty; 
-                    return cur; 
-                }
-                return { 
-                    Ten_Mon: item.Ten_Dich_Vu, 
-                    Gia: Number(item.Gia_Ban), 
-                    So_Luong: qty 
-                };
-            });
-
-            // Trừ kho hệ thống
-            if (item.Loai_DV !== "DỊCH VỤ") {
-                await window.update(window.ref(window.db, `services/${sid}`), {
-                    Ton_Kho: (item.Ton_Kho || 0) - qty
-                });
+        await window.runTransaction(serviceRef, (cur) => {
+            if(cur) { 
+                cur.So_Luong = (Number(cur.So_Luong) || 0) + qty; 
+                return cur; 
             }
+            return { 
+                Ten_Mon: item.Ten_Dich_Vu, 
+                Gia: Number(item.Gia_Ban), 
+                So_Luong: qty 
+            };
+        });
 
-            // Reset form
-            document.getElementById('service-search-input').value = '';
-            document.getElementById('add-service-id').value = '';
-            document.getElementById('add-service-qty').value = '1';
-            document.getElementById('add-service-box').classList.add('hidden');
-            
-            alert("Đã thêm món!");
-            app.showDetail(courtId); 
-        } catch (e) { alert("Lỗi: " + e.message); }
-    },
+        // 3. TRỪ KHO ẢO TRONG CACHE ĐỂ GIAO DIỆN NHẢY SỐ NGAY
+        if (item.Loai_DV !== "DỊCH VỤ") {
+            item.Ton_Kho = (Number(item.Ton_Kho) || 0) - qty;
+        }
+
+        // 4. RESET FORM & CẬP NHẬT GIAO DIỆN
+        document.getElementById('service-search-input').value = '';
+        document.getElementById('add-service-id').value = '';
+        document.getElementById('add-service-qty').value = '1';
+        document.getElementById('add-service-box').classList.add('hidden');
+        
+        // Vẽ lại danh sách dịch vụ (để thấy tồn kho giảm ảo) và chi tiết sân
+        if (typeof app.renderPosProducts === 'function') app.renderPosProducts(); 
+        app.showDetail(courtId); 
+
+        console.log("✅ Thêm món thành công (Đã trừ kho ảo)");
+
+    } catch (e) { 
+        console.error("Lỗi addServiceToCourt:", e);
+        alert("Lỗi: " + e.message); 
+    }
+},
 
     // --- BỔ SUNG: Đổi sân ---
     transferCourt: async () => {
@@ -1502,77 +1608,78 @@ cancelCourtRequest: async () => {
         const method = document.getElementById('payment-method-select')?.value.trim() || 'Tiền mặt';
         const khachHang = court.Ten_Khach || "Khách lẻ";
         const tienCoc = Number(court.Da_Coc || 0);
-        const memberId = court.Member_ID; // Lấy Member_ID để xử lý ví
+        const memberId = court.Member_ID;
 
-        // ================= BỔ SUNG: XỬ LÝ TRỪ VÍ HỘI VIÊN =================
+        // ================= XỬ LÝ TRỪ VÍ HỘI VIÊN =================
         if (method === "Ví hội viên") {
             if (!memberId) {
                 return alert("⚠️ Sân này không gắn với hội viên, không thể thanh toán bằng ví!");
             }
-
             const memberRef = window.ref(window.db, `members/${memberId}/Vi_Du`);
-            
-            // Sử dụng Transaction để đảm bảo trừ tiền chính xác
             const result = await window.runTransaction(memberRef, (currentBalance) => {
                 const balance = Number(currentBalance || 0);
-                if (balance < total) {
-                    return; // Trả về undefined để hủy transaction nếu không đủ tiền
-                }
+                if (balance < total) return; 
                 return balance - total;
             });
-
             if (!result.committed) {
                 return alert("❌ Số dư ví không đủ để thực hiện thanh toán!");
             }
         }
-        // =================================================================
 
+        // 2. XỬ LÝ DANH SÁCH MÓN & CHUẨN BỊ CHỐT KHO
         let billItems = [];
         let totalDichVu = 0;
         let dsTenDV = [];
+        const stockUpdates = {}; // Đối tượng chứa các thay đổi tồn kho thực tế
 
-        // 2. LẤY DỊCH VỤ VÀ CHỐNG LỖI "NOT ITERABLE"
         let rawServices = (court.Playing && court.Playing.Services) ? court.Playing.Services : (court.Dich_Vu || {});
-        
         if (typeof rawServices !== 'object' || rawServices === null || Array.isArray(rawServices)) {
             rawServices = {}; 
         }
 
-        Object.values(rawServices).forEach(item => {
+        Object.entries(rawServices).forEach(([sid, item]) => {
             if (item && typeof item === 'object') {
                 const gia = parseInt(item.Price || item.Gia || 0);
                 const sl = parseInt(item.Qty || item.So_Luong || item.SL || 1);
                 const ten = item.Name || item.Ten_Mon || item.Ten || "Dịch vụ";
+                
                 totalDichVu += gia * sl;
                 dsTenDV.push(`${ten} x${sl}`);
                 billItems.push({ Ten: ten, SL: sl, Gia: gia, name: ten, qty: sl, price: gia });
+
+                // --- LOGIC CHỐT KHO THẬT ---
+                const serviceInCache = window.dataCache.services[sid];
+                // Chỉ chốt kho cho Hàng hóa (nước uống, thuốc lá...), bỏ qua loại DỊCH VỤ
+                if (serviceInCache && serviceInCache.Loai_DV !== "DỊCH VỤ") {
+                    stockUpdates[`services/${sid}/Ton_Kho`] = Number(serviceInCache.Ton_Kho);
+                }
             }
         });
 
         // 3. XỬ LÝ TIỀN SÂN KÈM THỜI GIAN
         const gioVao = court.Gio_Vao || "??:??";
         const gioRa = new Date().toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' });
-        
         const tienSan = total + tienCoc - totalDichVu; 
         const tenSanHienThi = `Tiền giờ ${court.Ten_San || inputId} (${gioVao} - ${gioRa})`;
         
         if (tienSan > 0) {
             billItems.unshift({ Ten: tenSanHienThi, SL: 1, Gia: tienSan, name: tenSanHienThi, qty: 1, price: tienSan });
         }
-
         if (tienCoc > 0) {
             billItems.push({ Ten: "Đã khấu trừ tiền cọc", SL: 1, Gia: -tienCoc, name: "Đã khấu trừ tiền cọc", qty: 1, price: -tienCoc });
         }
-
         let noiDungFull = tenSanHienThi + (dsTenDV.length > 0 ? ", " + dsTenDV.join(", ") : "");
 
-        // 4. LƯU HÓA ĐƠN
+        // 4. THỰC THI CẬP NHẬT TỔNG THỂ (Atomic Updates)
+        const finalUpdates = {};
         const billId = Date.now();
-        await window.set(window.ref(window.db, 'bills/' + billId), {
+
+        // A. Cập nhật hóa đơn
+        finalUpdates[`bills/${billId}`] = {
             Thoi_Gian: new Date().toLocaleString('vi-VN'),
             Ngay_Thang: new Date().toISOString().split('T')[0],
             Khach_Hang: khachHang,
-            Member_ID: memberId || null, // Lưu thêm memberId vào bill để đối soát
+            Member_ID: memberId || null,
             Tong_Tien: total,
             PTTT: method,
             Items: billItems,
@@ -1580,9 +1687,19 @@ cancelCourtRequest: async () => {
             Ten_San: court.Ten_San || "",
             Gio_Vao: gioVao,
             Gio_Ra: gioRa
-        });
+        };
 
-        // BỔ SUNG: CẬP NHẬT TỔNG CHI TIÊU HỘI VIÊN (Tích lũy thăng hạng)
+        // B. Reset sân về trạng thái trống
+        finalUpdates[`courts/${inputId}`] = {
+            Trang_Thai: "Sẵn sàng", Ten_Khach: "", SDT: "", Sdt_Khach: "", Member_ID: null, Gio_Vao: "", Da_Coc: 0, Playing: null, Dich_Vu: null 
+        };
+
+        // C. Gộp phần chốt kho vào cùng một lệnh update để tối ưu
+        Object.assign(finalUpdates, stockUpdates);
+
+        await window.update(window.ref(window.db), finalUpdates);
+
+        // 5. CẬP NHẬT TỔNG CHI TIÊU HỘI VIÊN (Tích lũy thăng hạng)
         if (memberId) {
             const mDataRef = window.ref(window.db, `members/${memberId}`);
             await window.runTransaction(mDataRef, (current) => {
@@ -1593,17 +1710,12 @@ cancelCourtRequest: async () => {
             });
         }
 
-        // 5. RESET SÂN VỀ TRẠNG THÁI TRỐNG
-        await window.update(window.ref(window.db, `courts/${inputId}`), {
-            Trang_Thai: "Sẵn sàng", Ten_Khach: "", SDT: "", Sdt_Khach: "", Member_ID: null, Gio_Vao: "", Da_Coc: 0, Playing: null, Dich_Vu: null 
-        });
-
+        // 6. DỌN DẸP GIAO DIỆN & IN ẤN
         if (typeof ui !== 'undefined' && ui.closeModal) ui.closeModal('checkout');
         if (typeof ui !== 'undefined' && ui.closeModal) ui.closeModal('court-detail');
 
-        // 6. IN HÓA ĐƠN
         setTimeout(() => {
-            if (confirm("✅ Thanh toán thành công! Bạn có muốn in hóa đơn không?")) {
+            if (confirm("✅ Thanh toán & Chốt kho thành công! In hóa đơn chứ?")) {
                 if (typeof window.handlePrintOrder === 'function') {
                     window.handlePrintOrder({
                         Id: billId.toString().slice(-8),
@@ -1622,74 +1734,78 @@ cancelCourtRequest: async () => {
 },
 // --- HÀM VẼ GIỎ HÀNG BÊN PHẢI TAB BÁN LẺ ---
     renderPOSCart: () => {
-    const container = document.getElementById('pos-cart-items');
-    const totalLabel = document.getElementById('pos-total') || document.getElementById('pos-total-amount');
+    // Đổi ID từ 'pos-cart-items' sang 'pos-cart-render' cho khớp với <tbody> trong index.html
+    const container = document.getElementById('pos-cart-render');
+    const totalLabel = document.getElementById('pos-total');
     
     if (!container) return;
 
     let html = '';
     let total = 0;
 
+    // Kiểm tra giỏ hàng trống
     if (!window.posCart || window.posCart.length === 0) {
         container.innerHTML = `
-            <div class="py-20 flex flex-col items-center justify-center opacity-20">
-                <i class="fa-solid fa-cart-plus text-5xl mb-4"></i>
-                <p class="text-[10px] font-black uppercase tracking-[0.3em]">Giỏ hàng trống</p>
-            </div>`;
+            <tr>
+                <td colspan="4" class="py-16 text-center">
+                    <div class="opacity-20">
+                        <i class="fa-solid fa-cart-shopping text-4xl mb-3"></i>
+                        <p class="text-[10px] font-black uppercase tracking-[0.2em]">Giỏ hàng trống</p>
+                    </div>
+                </td>
+            </tr>`;
         if (totalLabel) totalLabel.innerText = '0đ';
         return;
     }
 
-    // Kiểm tra số lượng món để điều chỉnh độ cao hiển thị
-    const isManyItems = window.posCart.length >= 5;
-
+    // Duyệt qua giỏ hàng để tạo các dòng bảng (tr)
     window.posCart.forEach((item, index) => {
         const itemPrice = Number(item.price || 0);
         const itemQty = Number(item.qty || 0);
         const subtotal = itemPrice * itemQty;
         total += subtotal;
 
-        // Nếu nhiều món (>=5), chúng ta giảm padding từ p-3 xuống p-2 để tiết kiệm không gian
         html += `
-        <div class="group relative bg-white/5 border border-white/10 rounded-xl ${isManyItems ? 'p-2 mb-2' : 'p-3 mb-3'} transition-all hover:bg-white/[0.08] hover:border-blue-500/50">
-            <div class="flex justify-between items-start mb-2">
-                <div class="flex-1 pr-2 truncate">
-                    <h4 class="text-[10px] font-black text-white uppercase leading-tight tracking-tight truncate">
+            <tr class="border-b border-white/5 group hover:bg-white/[0.03] transition-all">
+                <td class="py-3 pl-2">
+                    <div class="text-[10px] font-black text-white uppercase leading-tight truncate max-w-[110px]" title="${item.name}">
                         ${item.name}
-                    </h4>
-                    <span class="text-[9px] font-bold text-blue-400/80">${itemPrice.toLocaleString()}đ</span>
-                </div>
-                <div class="text-right">
-                    <div class="text-[11px] font-black text-white">${subtotal.toLocaleString()}đ</div>
-                </div>
-            </div>
-            
-            <div class="flex items-center justify-between">
-                <div class="flex items-center gap-1 bg-black/30 rounded-lg p-0.5 border border-white/5">
-                    <button onclick="app.updatePOSQty(${index}, -1)" 
-                            class="w-6 h-6 flex items-center justify-center rounded-md text-white hover:bg-white/10 active:scale-90 transition-all">
-                        <i class="fa-solid fa-minus text-[7px]"></i>
+                    </div>
+                    <div class="text-[9px] font-bold text-slate-500">${itemPrice.toLocaleString()}đ</div>
+                </td>
+
+                <td class="py-3">
+                    <div class="flex items-center justify-center gap-1.5 bg-black/40 rounded-lg p-1 w-fit mx-auto border border-white/5">
+                        <button onclick="app.updatePOSQty(${index}, -1)" 
+                                class="w-5 h-5 flex items-center justify-center rounded-md text-slate-400 hover:text-white hover:bg-white/10 transition-all">
+                            <i class="fa-solid fa-minus text-[7px]"></i>
+                        </button>
+                        
+                        <span class="text-[10px] font-[900] text-blue-400 w-4 text-center tabular-nums">${itemQty}</span>
+                        
+                        <button onclick="app.updatePOSQty(${index}, 1)" 
+                                class="w-5 h-5 flex items-center justify-center bg-blue-600 rounded-md text-white hover:bg-blue-500 transition-all shadow-sm">
+                            <i class="fa-solid fa-plus text-[7px]"></i>
+                        </button>
+                    </div>
+                </td>
+
+                <td class="py-3 text-right pr-2 font-black text-white text-[10px] tabular-nums">
+                    ${subtotal.toLocaleString()}đ
+                </td>
+
+                <td class="py-3 text-center w-8">
+                    <button onclick="app.updatePOSQty(${index}, -999)" 
+                            class="text-slate-600 hover:text-rose-500 transition-colors opacity-0 group-hover:opacity-100">
+                        <i class="fa-solid fa-trash-can text-[9px]"></i>
                     </button>
-                    
-                    <span class="text-[10px] font-black text-blue-400 w-6 text-center tabular-nums">${itemQty}</span>
-                    
-                    <button onclick="app.updatePOSQty(${index}, 1)" 
-                            class="w-6 h-6 flex items-center justify-center bg-blue-600 rounded-md text-white hover:bg-blue-500 active:scale-90 transition-all shadow-sm">
-                        <i class="fa-solid fa-plus text-[7px]"></i>
-                    </button>
-                </div>
-                
-                <button onclick="app.updatePOSQty(${index}, -999)" 
-                        class="text-[8px] font-black text-slate-500 hover:text-rose-500 uppercase flex items-center gap-1">
-                    <i class="fa-solid fa-trash-can"></i> Xóa
-                </button>
-            </div>
-        </div>`;
+                </td>
+            </tr>`;
     });
 
     container.innerHTML = html;
     
-    // Cập nhật tổng tiền với hiệu ứng ánh sáng (Glow)
+    // Cập nhật tổng tiền
     if (totalLabel) {
         totalLabel.innerText = total.toLocaleString() + 'đ';
         totalLabel.className = "font-black text-2xl text-blue-400 drop-shadow-[0_0_8px_rgba(96,165,250,0.4)]";
@@ -1697,41 +1813,59 @@ cancelCourtRequest: async () => {
 },
 
     // --- HÀM CẬP NHẬT SỐ LƯỢNG TRONG GIỎ POS ---
-    updatePOSQty: async (index, change) => {
+    updatePOSQty: (index, change) => {
     const item = window.posCart[index];
     if (!item) return;
 
     const product = window.dataCache.services[item.id];
     const isDichVu = product && product.Loai_DV === "DỊCH VỤ";
-    const stockRef = window.ref(window.db, `services/${item.id}/Ton_Kho`);
 
-    try {
-        if (change === -999) {
-            // XÓA MÓN: Cộng trả lại toàn bộ số lượng trong giỏ vào kho
-            if (!isDichVu) {
-                await window.runTransaction(stockRef, (current) => (Number(current) || 0) + item.qty);
+    // 1. XÓA MÓN HOÀN TOÀN (-999)
+    if (change === -999) {
+        if (!isDichVu && product) {
+            // Cộng trả lại toàn bộ số lượng từ giỏ hàng vào Cache
+            product.Ton_Kho = Number(product.Ton_Kho || 0) + Number(item.qty);
+        }
+        window.posCart.splice(index, 1);
+    } 
+    
+    // 2. GIẢM SỐ LƯỢNG (-1)
+    else if (change === -1) {
+        if (item.qty > 1) {
+            item.qty--;
+            if (!isDichVu && product) {
+                // Trả lại 1 đơn vị vào Cache
+                product.Ton_Kho = Number(product.Ton_Kho || 0) + 1;
+            }
+        } else {
+            // Nếu giảm từ 1 về 0 thì xóa món và trả kho
+            if (!isDichVu && product) {
+                product.Ton_Kho = Number(product.Ton_Kho || 0) + 1;
             }
             window.posCart.splice(index, 1);
-        } 
-        else if (change === -1) {
-            // GIẢM 1: Cộng trả lại 1 vào kho
-            if (!isDichVu) {
-                await window.runTransaction(stockRef, (current) => (Number(current) || 0) + 1);
+        }
+    }
+
+    // 3. TĂNG SỐ LƯỢNG (+1)
+    else if (change === 1) {
+        if (!isDichVu && product) {
+            // Kiểm tra tồn kho trong Cache trước khi cho tăng
+            if (Number(product.Ton_Kho) > 0) {
+                item.qty++;
+                product.Ton_Kho = Number(product.Ton_Kho) - 1; // Trừ kho ảo trong Cache
+            } else {
+                alert("Sản phẩm này đã hết hàng trong kho!");
+                return;
             }
-            item.qty--;
-            if (item.qty <= 0) window.posCart.splice(index, 1);
-        } 
-        else if (change === 1) {
-            // TĂNG 1: Trừ tiếp 1 trong kho (Kiểm tra tồn trước khi trừ)
-            if (!isDichVu) {
-                if (Number(product.Ton_Kho) <= 0) return alert("Kho đã hết hàng!");
-                await window.runTransaction(stockRef, (current) => (Number(current) || 0) - 1);
-            }
+        } else {
+            // Nếu là DỊCH VỤ (không cần kho) thì tăng thoải mái
             item.qty++;
         }
+    }
 
-        app.renderPOSCart();
-    } catch (e) { console.error(e); }
+    // 4. CẬP NHẬT GIAO DIỆN CẢ 2 VÙNG (Local update)
+    app.renderPOSCart();     // Vẽ lại bảng giỏ hàng
+    app.renderPosProducts(); // Vẽ lại danh sách sản phẩm (để cập nhật số Tồn hiển thị)
 },
 searchMemberForPOS: (val) => {
     const input = val.trim().toLowerCase();
@@ -1902,38 +2036,49 @@ processFinalPos: async (subtotal, rankDiscPercent, customerName, memberId) => {
         const method = document.getElementById('pos-method-select').value;
         const manualDisc = Number(document.getElementById('pos-manual-discount')?.value || 0);
         
-        // 1. Tính toán số tiền thực tế sau giảm giá
         const rankDiscMoney = Math.round(subtotal * rankDiscPercent / 100);
         const totalAmount = Math.max(0, subtotal - rankDiscMoney - manualDisc);
 
-        // 2. XỬ LÝ THANH TOÁN BẰNG VÍ HỘI VIÊN
+        const updates = {}; // Dùng để gom tất cả các thay đổi gửi lên Firebase 1 lần
+        const now = new Date();
+        const bId = 'BILL-POS-' + Date.now();
+
+        // 1. XỬ LÝ VÍ HỘI VIÊN (Dùng Transaction riêng nếu cần, hoặc trừ thẳng nếu tin tưởng Cache)
         if (method === "Ví hội viên") {
-            if (!memberId) {
-                alert("Lỗi: Không tìm thấy thông tin hội viên để trừ ví!");
-                return;
-            }
-
-            const memberRef = window.ref(window.db, `members/${memberId}/Vi_Du`);
+            if (!memberId) return alert("Lỗi: Không tìm thấy thông tin hội viên!");
+            const member = window.dataCache.members[memberId];
+            const currentBalance = Number(member.Vi_Du || 0);
             
-            // Sử dụng Transaction để đảm bảo không bị trừ âm nếu nhiều người cùng thao tác
-            const result = await window.runTransaction(memberRef, (currentBalance) => {
-                const balance = Number(currentBalance || 0);
-                if (balance < totalAmount) {
-                    return; // Hủy transaction nếu không đủ tiền
-                }
-                return balance - totalAmount;
-            });
-
-            if (!result.committed) {
-                alert("❌ Thanh toán thất bại: Số dư ví không đủ hoặc có lỗi giao dịch!");
-                return;
-            }
+            if (currentBalance < totalAmount) return alert("❌ Số dư ví không đủ!");
+            
+            // Trừ tiền trong ví
+            updates[`members/${memberId}/Vi_Du`] = currentBalance - totalAmount;
         }
 
-        // 3. LƯU HÓA ĐƠN ĐẦY ĐỦ THÔNG TIN
-        const bId = 'BILL-POS-' + Date.now();
-        const now = new Date();
-        const billData = {
+        // 2. CẬP NHẬT TỒN KHO THẬT SỰ (Lấy từ dataCache đã trừ ảo trước đó)
+        window.posCart.forEach(item => {
+            const product = window.dataCache.services[item.id];
+            if (product && product.Loai_DV !== "DỊCH VỤ") {
+                // Ghi đè số lượng tồn kho cuối cùng lên Firebase
+                updates[`services/${item.id}/Ton_Kho`] = Number(product.Ton_Kho);
+            }
+        });
+
+        // 3. CẬP NHẬT TỔNG CHI TIÊU & HẠNG (Nếu có Member)
+        if (memberId) {
+            const member = window.dataCache.members[memberId];
+            const newTotalSpend = (Number(member.Tong_Chi_Tieu) || 0) + totalAmount;
+            updates[`members/${memberId}/Tong_Chi_Tieu`] = newTotalSpend;
+
+            // Logic thăng hạng
+            let newRank = member.Hang_HV || "Đồng";
+            if (newTotalSpend >= 15000000) newRank = "Vàng";
+            else if (newTotalSpend >= 5000000) newRank = "Bạc";
+            updates[`members/${memberId}/Hang_HV`] = newRank;
+        }
+
+        // 4. CHUẨN BỊ DỮ LIỆU HÓA ĐƠN
+        updates[`bills/${bId}`] = {
             Khach_Hang: customerName,
             Member_ID: memberId || null,
             Tong_Tien: totalAmount,
@@ -1952,44 +2097,28 @@ processFinalPos: async (subtotal, rankDiscPercent, customerName, memberId) => {
             Loai_HD: "Bán lẻ"
         };
 
-        await window.set(window.ref(window.db, 'bills/' + bId), billData);
+        // 🚀 THỰC THI GHI DỮ LIỆU TỔNG THỂ (Atomic Update - Cực kỳ an toàn)
+        await window.update(window.ref(window.db), updates);
 
-        // 4. CẬP NHẬT CHI TIÊU VÀ HẠNG HỘI VIÊN (Nếu có memberId)
-        if (memberId) {
-            const mDataRef = window.ref(window.db, `members/${memberId}`);
-            await window.runTransaction(mDataRef, (current) => {
-                if (current) {
-                    current.Tong_Chi_Tieu = (Number(current.Tong_Chi_Tieu) || 0) + totalAmount;
-                    // Tự động thăng hạng theo tổng chi tiêu
-                    if (current.Tong_Chi_Tieu >= 15000000) current.Hang_HV = "Vàng";
-                    else if (current.Tong_Chi_Tieu >= 5000000) current.Hang_HV = "Bạc";
-                }
-                return current;
-            });
-        }
-
-        // 5. RESET GIỎ HÀNG VÀ GIAO DIỆN
+        // 5. RESET GIAO DIỆN
         window.posCart = [];
         app.renderPOSCart();
-        
-        // Đóng modal và reset input
+        app.renderPosProducts(); // Vẽ lại sản phẩm để cập nhật tồn kho chính thức
+
         const modal = document.getElementById('modal-pos-checkout');
-        if (modal) modal.classList.add('hidden');
+        if (modal) modal.style.display = 'none'; // Đóng bằng style vì bạn dùng flex
         
-        // Xóa trắng ô tìm kiếm và màu xanh highlight
         const searchInput = document.getElementById('pos-customer-search');
         if (searchInput) {
             searchInput.value = "";
             searchInput.classList.remove('text-blue-500', 'font-black');
         }
-        if (document.getElementById('pos-manual-discount')) document.getElementById('pos-manual-discount').value = "0";
-        if (document.getElementById('pos-member-id')) document.getElementById('pos-member-id').value = "";
-
+        
         alert(`✅ Thanh toán thành công bằng ${method}!`);
 
     } catch (e) { 
         console.error("Lỗi processFinalPos:", e);
-        alert("Lỗi: " + e.message); 
+        alert("Lỗi hệ thống: " + e.message); 
     }
 },
 // Thêm hàm này vào bên trong window.app = { ... }
@@ -2697,9 +2826,300 @@ reprintBill: (id) => {
         alert("Lỗi: Không tìm thấy hệ thống in ấn!");
     }
 },
+
+// Thêm vào window.app = { ... }
+
+switchBookingView: (mode) => {
+    const timeline = document.getElementById('booking-view-timeline');
+    const list = document.getElementById('booking-view-list');
+    const filter = document.getElementById('booking-list-filter');
+    const btnTimeline = document.getElementById('view-mode-timeline');
+    const btnList = document.getElementById('view-mode-list');
+
+    // Kiểm tra an toàn để tránh lỗi nếu thiếu HTML
+    if (!timeline || !list) return;
+
+    if (mode === 'list') {
+        // 1. Hiển thị danh sách, ẩn timeline
+        timeline.classList.add('hidden');
+        list.classList.remove('hidden');
+        if (filter) filter.classList.remove('hidden');
+
+        // 2. Cập nhật Style nút bấm
+        if (btnList) btnList.className = "px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all bg-white shadow-sm text-blue-500";
+        if (btnTimeline) btnTimeline.className = "px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all text-slate-400";
+
+        // 3. BỔ SUNG: Lấy filter hiện tại và Render dữ liệu
+        const filterSelect = document.querySelector('#booking-list-filter select');
+        const currentFilter = filterSelect ? filterSelect.value : 'today';
+        app.renderBookingList(currentFilter);
+        
+    } else {
+        // 1. Hiển thị timeline, ẩn danh sách
+        timeline.classList.remove('hidden');
+        list.classList.add('hidden');
+        if (filter) filter.classList.add('hidden');
+
+        // 2. Cập nhật Style nút bấm
+        if (btnTimeline) btnTimeline.className = "px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all bg-white shadow-sm text-blue-500";
+        if (btnList) btnList.className = "px-3 py-1.5 rounded-lg text-[9px] font-black uppercase transition-all text-slate-400";
+        
+        // 3. BỔ SUNG: Reload lại timeline để đảm bảo dữ liệu mới nhất
+        if (app.reloadTimeline) app.reloadTimeline();
+    }
+},
+
+renderBookingList: (range) => {
+    const container = document.getElementById('booking-list-render');
+    if (!container) return;
+
+    const bookings = window.dataCache.bookings || {};
+    let list = Object.entries(bookings).map(([id, b]) => ({ id, ...b }));
+
+    // --- BỔ SUNG: Lấy ngày đang hiển thị trên ô input view-date ---
+    const viewDateInput = document.getElementById('view-date');
+    const selectedDateStr = viewDateInput ? viewDateInput.value : ""; 
+
+    const now = new Date();
+    now.setHours(0, 0, 0, 0);
+
+    const getBookingDate = (b) => {
+        const rawDate = b.Ngay || b.ngay || ""; 
+        if (!rawDate) return null;
+        return new Date(rawDate);
+    };
+
+    const filteredList = list.filter(b => {
+        // Lấy ngày của từng booking (định dạng yyyy-mm-dd)
+        const bDateStr = b.Ngay || b.ngay || "";
+
+        // ƯU TIÊN 1: Nếu range truyền vào là một ngày cụ thể (yyyy-mm-dd) từ nút bấm lùi/tiến
+        if (range && range.includes('-') && range.length === 10) {
+            return bDateStr === range;
+        }
+
+        // ƯU TIÊN 2: Nếu sử dụng các nút lọc nhanh (Hôm nay, Ngày mai...)
+        const bDate = getBookingDate(b);
+        if (!bDate) return false;
+        bDate.setHours(0, 0, 0, 0);
+        const diffDays = Math.round((bDate - now) / (1000 * 60 * 60 * 24));
+
+        if (range === 'today') return diffDays === 0;
+        if (range === 'tomorrow') return diffDays === 1;
+        if (range === 'this-week') return diffDays >= 0 && diffDays <= 7;
+        if (range === 'next-week') return diffDays > 7 && diffDays <= 14;
+
+        // MẶC ĐỊNH: Nếu không truyền range, lọc theo ngày đang hiển thị trên ô view-date
+        return bDateStr === selectedDateStr;
+    });
+
+    // --- PHẦN SẮP XẾP VÀ RENDER GIỮ NGUYÊN NHƯ CŨ ---
+    filteredList.sort((a, b) => {
+        const dA = getBookingDate(a)?.getTime() || 0;
+        const dB = getBookingDate(b)?.getTime() || 0;
+        if (dA !== dB) return dA - dB;
+        return (a.Bat_Dau || "").localeCompare(b.Bat_Dau || "");
+    });
+
+    if (filteredList.length === 0) {
+        container.innerHTML = `<tr><td colspan="8" class="py-20 text-center opacity-20 italic uppercase text-[10px]">Không có lịch đặt phù hợp</td></tr>`;
+        return;
+    }
+
+    container.innerHTML = filteredList.map(b => {
+        const dDate = b.Ngay || "---";
+        const dName = b.Ten_Khach || "Khách lẻ";
+        const dPhone = b.SDT || "---";
+        const courtObj = window.dataCache.courts ? window.dataCache.courts[b.Court_ID] : null;
+        const dCourt = courtObj ? courtObj.Ten_San : (b.Court_ID || "N/A");
+        const dIn = b.Bat_Dau || "--:--";
+        const dOut = b.Ket_Thuc || "--:--";
+        const dDeposit = Number(b.Tien_Coc || b.Cọc || 0);
+        const dNote = b.Ghi_Chu || "";
+        const dStatus = b.Trang_Thai || "Chờ nhận sân";
+        
+        const statusColor = dStatus.includes("xác nhận") || dStatus.includes("đặt") || dStatus.includes("Chờ")
+            ? 'bg-emerald-100 text-emerald-600' 
+            : 'bg-amber-100 text-amber-600';
+
+        return `
+            <tr class="border-b border-slate-50 hover:bg-slate-50/50 transition-all group">
+                <td class="px-4 py-4 text-slate-400 font-medium">${dDate}</td>
+                <td class="px-4 py-4">
+                    <div class="font-black uppercase text-slate-800 text-[11px]">${dName}</div>
+                    <div class="text-[9px] text-indigo-500 font-bold italic">${dPhone}</div>
+                </td>
+                <td class="px-4 py-4 text-center">
+                    <span class="bg-indigo-50 text-indigo-600 px-3 py-1 rounded-lg text-[10px] font-[900] border border-indigo-100 uppercase italic">
+                        ${dCourt}
+                    </span>
+                </td>
+                <td class="px-4 py-4 text-center">
+                    <div class="flex items-center justify-center gap-2 text-slate-700 font-black text-[11px]">
+                        <span>${dIn}</span>
+                        <i class="fa-solid fa-arrow-right text-[8px] text-slate-300"></i>
+                        <span>${dOut}</span>
+                    </div>
+                </td>
+                <td class="px-4 py-4 text-right font-black text-rose-500 text-[11px]">
+                    ${dDeposit > 0 ? dDeposit.toLocaleString() + 'đ' : '-'}
+                </td>
+                <td class="px-4 py-4">
+                    <p class="max-w-[120px] truncate text-[10px] text-slate-400 italic" title="${dNote}">
+                        ${dNote || '...'}
+                    </p>
+                </td>
+                <td class="px-4 py-4 text-center">
+                    <span class="text-[8px] font-black uppercase px-2 py-1 rounded-md ${statusColor}">
+                        ${dStatus}
+                    </span>
+                </td>
+                <td class="px-4 py-4 text-right">
+                    <div class="flex justify-end gap-1.5">
+                        <button onclick="app.checkInBooking('${b.id}')" 
+                            class="bg-indigo-600 text-white px-2.5 py-1.5 rounded-lg text-[9px] font-black uppercase hover:bg-indigo-700 active:scale-95 transition-all">
+                            Vào sân
+                        </button>
+                        <button onclick="app.editBooking('${b.id}')" 
+                            class="bg-slate-100 text-slate-400 p-1.5 rounded-lg hover:bg-indigo-50 hover:text-indigo-600 transition-all">
+                            <i class="fa-solid fa-pen-to-square"></i>
+                        </button>
+                        <button onclick="app.deleteBooking('${b.id}')" 
+                            class="bg-slate-100 text-slate-400 p-1.5 rounded-lg hover:bg-rose-50 hover:text-rose-600 transition-all">
+                            <i class="fa-solid fa-trash-can"></i>
+                        </button>
+                    </div>
+                </td>
+            </tr>
+        `;
+    }).join('');
+},
+checkInBooking: async (bookingId) => {
+    // 1. Kiểm tra ID đầu vào
+    if (!bookingId) return alert("Không tìm thấy mã lịch đặt!");
+
+    // 2. Lấy dữ liệu từ Cache (đã được onValue cập nhật realtime)
+    const b = window.dataCache.bookings[bookingId];
+    if (!b) return alert("Dữ liệu lịch đặt không tồn tại hoặc đã được xử lý!");
+
+    // Hỏi xác nhận để tránh bấm nhầm
+    if (!confirm(`Xác nhận cho khách [${b.Ten_Khach || 'Khách lẻ'}] vào sân?`)) return;
+
+    try {
+        // Lấy giờ hiện tại để ghi nhận giờ vào thực tế
+        const now = new Date();
+        const currentTime = now.getHours().toString().padStart(2, '0') + ":" + 
+                          now.getMinutes().toString().padStart(2, '0');
+
+        // Lấy số tiền cọc (Chuyển về kiểu số để tính toán)
+        const depositAmount = Number(b.Tien_Coc || b.Cọc || 0); 
+
+        // 3. Chuẩn bị dữ liệu để "Kích hoạt" sân tương ứng
+        const courtUpdate = {
+            Trang_Thai: "Đang chơi",
+            Ten_Khach: b.Ten_Khach || "Khách đặt lịch",
+            SDT: b.SDT || "",
+            Gio_Vao: currentTime,
+            Member_ID: b.Member_ID || "",
+            Loai_Khach: b.Loai_Khach || "Vãng lai",
+            Da_Coc: depositAmount 
+        };
+
+        // 4. BƯỚC QUAN TRỌNG: Cập nhật thông tin vào Sân
+        // Sử dụng Court_ID có sẵn trong dữ liệu đặt lịch
+        await window.update(window.ref(window.db, `courts/${b.Court_ID}`), courtUpdate);
+        
+        // 5. BƯỚC QUYẾT ĐỊNH: Xóa lịch đặt khỏi danh sách Bookings
+        // Khi xóa dòng này, Firebase sẽ báo cho app và danh sách sẽ tự mất dòng này
+        await window.remove(window.ref(window.db, `bookings/${bookingId}`));
+
+        // 6. Thông báo và phản hồi UI
+        alert(`✅ Thành công!\nKhách: ${b.Ten_Khach}\nSân: ${b.Court_ID}\nĐã chuyển sang sơ đồ sân.`);
+        
+    } catch (e) {
+        console.error("Lỗi khi chuyển dữ liệu từ danh sách:", e);
+        alert("Có lỗi xảy ra: " + e.message);
+    }
+},
+
+editBooking: (id) => {
+    // Logic: Lấy dữ liệu từ window.dataCache.bookings[id] và đổ vào Modal Sửa
+    const data = window.dataCache.bookings[id];
+    if (data) {
+        // Ví dụ: Mở modal và điền thông tin khách
+        // app.openBookingModal('edit', {id, ...data}); 
+        console.log("Đang sửa ca đặt:", data);
+        alert("Tính năng sửa đang được kết nối với Modal của bạn...");
+    }
+},
+
+deleteBooking: async (bookingId) => {
+    const b = window.dataCache.bookings[bookingId];
+    if (!b) return;
+
+    if (!confirm(`Bạn có chắc chắn muốn XÓA lịch đặt của [${b.Ten_Khach}]?\nLưu ý: Hành động này sẽ xóa vĩnh viễn ca đặt này.`)) return;
+
+    try {
+        await window.remove(window.ref(window.db, `bookings/${bookingId}`));
+        // Không cần gọi hàm render lại, Firebase onValue sẽ tự làm việc đó
+    } catch (e) {
+        alert("Lỗi khi xóa: " + e.message);
+    }
+},
+changeViewDate: (offset) => {
+    const dateInput = document.getElementById('view-date');
+    if (!dateInput) return;
+
+    let currentDate = dateInput.value ? new Date(dateInput.value) : new Date();
+    currentDate.setDate(currentDate.getDate() + offset);
+    
+    const yyyy = currentDate.getFullYear();
+    const mm = String(currentDate.getMonth() + 1).padStart(2, '0');
+    const dd = String(currentDate.getDate()).padStart(2, '0');
+    
+    const newDateStr = `${yyyy}-${mm}-${dd}`;
+    dateInput.value = newDateStr;
+
+    // 1. Cập nhật Timeline
+    if (window.app.reloadTimeline) window.app.reloadTimeline();
+
+    // 2. Cập nhật Danh sách (Dùng chính cái ngày vừa chọn)
+    if (window.app.renderBookingList) {
+        window.app.renderBookingList(newDateStr); 
+    }
+},
+clearPosCart: () => {
+    if (!window.posCart || window.posCart.length === 0) return;
+
+    if (confirm("Xóa giỏ hàng và hoàn trả số lượng vào kho?")) {
+        window.posCart.forEach(item => {
+            const product = window.dataCache.services[item.id];
+            if (product && product.Loai_DV !== "DỊCH VỤ") {
+                // Cộng trả lại kho ảo trong Cache
+                product.Ton_Kho = Number(product.Ton_Kho) + Number(item.qty);
+            }
+        });
+
+        window.posCart = [];
+        app.renderPOSCart();
+        app.renderPosProducts(); // Vẽ lại để thấy số tồn quay về ban đầu
+    }
+},
+
+
     toggleMaintenance: (id, cur) => window.update(window.ref(window.db, 'courts/' + id), { Trang_Thai: cur === "Bảo trì" ? "Sẵn sàng" : "Bảo trì" }),
     deleteItem: (path) => { if(confirm("Xác nhận xóa vĩnh viễn?")) window.remove(window.ref(window.db, path)); }
 };
+
+// Bước bổ trợ: Tự động đóng menu khi người dùng nhấn ra bất kỳ đâu ngoài menu
+window.addEventListener('click', (e) => {
+    const manageMenu = document.getElementById('dropdown-manage');
+    const userMenu = document.getElementById('dropdown-user');
+    
+    // Nếu vị trí click không nằm trong nút bấm hoặc nội dung menu thì ẩn đi
+    if (manageMenu && !manageMenu.contains(e.target)) manageMenu.classList.add('hidden');
+    if (userMenu && !userMenu.contains(e.target)) userMenu.classList.add('hidden');
+});
 
 
 // 4. Hàm in ấn & đồng bộ logic với print.html
