@@ -1,191 +1,281 @@
 window.ui = {
     // 1. CHUYỂN TAB VÀ KÍCH HOẠT VẼ DỮ LIỆU
     switchTab: (id) => {
-        // Ẩn hiện tab và xử lý class hidden của Tailwind
-        document.querySelectorAll('.tab-content').forEach(t => {
-            t.classList.remove('active');
-            t.classList.add('hidden');
-        });
-        
-        const targetTab = document.getElementById('tab-' + id);
-        if (targetTab) {
-            targetTab.classList.add('active');
-            targetTab.classList.remove('hidden');
-        }
-
-        // Đổi màu nút bấm Menu
-        document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-        const targetBtn = document.getElementById('btn-' + id);
-        if (targetBtn) targetBtn.classList.add('active');
-
-        // KÍCH HOẠT VẼ LẠI DỮ LIỆU CHO TỪNG TAB
-        if (!window.app) return;
-
-        if (id === 'pos') {
-            console.log("Kích hoạt POS...");
-            if (typeof window.app.renderPosProducts === 'function') window.app.renderPosProducts();
-        }
-
-        if (id === 'service') {
-            console.log("Kích hoạt Tab Dịch vụ...");
-            if (typeof window.app.renderServicesTable === 'function') window.app.renderServicesTable();
-        }
-        // Trong ui-controller.js
-if (id === 'suppliers') {
-    // 1. Vẽ ngay lập tức (nếu cache đã có sẵn dữ liệu từ lần load trước)
-    if (window.app && window.app.renderSupplierTable) {
-        window.app.renderSupplierTable();
-    }
-
-    // 2. Phòng hờ trường hợp mạng chậm, thử vẽ lại sau 300ms
-    setTimeout(() => {
-        if (window.app && window.app.renderSupplierTable) {
-            window.app.renderSupplierTable();
-        }
-    }, 300);
-}
-
-// Thêm vào trong openModal
-else if (type === 'supplier') {
-    if (!id) { // Thêm mới
-        document.getElementById('supplier-edit-id').value = "";
-        document.getElementById('sup-name').value = "";
-        document.getElementById('sup-phone').value = "";
-        document.getElementById('sup-address').value = "";
-    }
-}
-
-        if (id === 'court') {
-            console.log("Kích hoạt Tab Sân...");
-            if (typeof window.app.renderCourtsTable === 'function') window.app.renderCourtsTable();
-        }
-
-        if (id === 'reports') {
-    // 1. Mặc định lùi ngày bắt đầu về 30 ngày trước để báo cáo có dữ liệu ngay
-    const dateTo = new Date().toISOString().split('T')[0];
-    const dateFrom = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+    // 1. Ẩn hiện tab và xử lý class hidden của Tailwind
+    document.querySelectorAll('.tab-content').forEach(t => {
+        t.classList.remove('active');
+        t.classList.add('hidden');
+    });
     
-    if (document.getElementById('report-date-from')) document.getElementById('report-date-from').value = dateFrom;
-    if (document.getElementById('report-date-to')) document.getElementById('report-date-to').value = dateTo;
+    const targetTab = document.getElementById('tab-' + id);
+    if (targetTab) {
+        targetTab.classList.add('active');
+        targetTab.classList.remove('hidden');
+    }
 
-    // 2. Chạy hàm tính toán
-    if (window.app && typeof window.app.loadReports === 'function') {
-        window.app.loadReports();
+    // 2. Đổi màu nút bấm Menu
+    document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+    const targetBtn = document.getElementById('btn-' + id);
+    if (targetBtn) targetBtn.classList.add('active');
+
+    // 3. KÍCH HOẠT VẼ LẠI DỮ LIỆU CHO TỪNG TAB
+    if (!window.app) return;
+
+    // Tab Bán lẻ
+    if (id === 'pos') {
+        if (typeof window.app.renderPosProducts === 'function') window.app.renderPosProducts();
     }
-}
-    // Tìm trong ui.switchTab và thêm đoạn này:
-if (id === 'stock') {
-    console.log("Kích hoạt Tab Nhập kho...");
-    if (typeof window.app.renderStockTable === 'function') {
-        window.app.renderStockTable();
+
+    // Tab Dịch vụ
+    if (id === 'service') {
+        if (typeof window.app.renderServicesTable === 'function') window.app.renderServicesTable();
     }
-}
-        if (id === 'bill') {
-            if (typeof window.app.renderBills === 'function') window.app.renderBills();
+
+    if (tabId === 'all-customers') {
+    app.renderAllCustomers();
+    }
+    // Tab Nhà cung cấp
+    if (id === 'suppliers') {
+        if (typeof window.app.renderSupplierTable === 'function') {
+            window.app.renderSupplierTable();
+            // Phòng hờ mạng chậm, thử lại sau 300ms
+            setTimeout(() => window.app.renderSupplierTable(), 300);
         }
-    },
+    }
+
+    // Tab Sân
+    if (id === 'court') {
+        if (typeof window.app.renderCourtsTable === 'function') window.app.renderCourtsTable();
+    }
+
+    // Tab Báo cáo
+    if (id === 'reports') {
+        const dateTo = new Date().toISOString().split('T')[0];
+        const dateFrom = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+        
+        if (document.getElementById('report-date-from')) document.getElementById('report-date-from').value = dateFrom;
+        if (document.getElementById('report-date-to')) document.getElementById('report-date-to').value = dateTo;
+
+        if (typeof window.app.loadReports === 'function') window.app.loadReports();
+    }
+
+    // Tab Nhập kho
+    if (id === 'stock') {
+        if (typeof window.app.renderStockTable === 'function') window.app.renderStockTable();
+    }
+
+    // Tab Hóa đơn
+    if (id === 'bill') {
+    if (typeof window.app.renderBills === 'function') {
+        window.app.renderBills(); // Hàm này giờ đã có logic check isAdmin ở Bước 1
+    }
+}
+
+    // --- MỚI BỔ SUNG: Tab Quản lý tài khoản nhân viên ---
+    if (id === 'staff') {
+        console.log("Kích hoạt Tab Nhân viên...");
+        if (typeof window.app.renderStaffTable === 'function') window.app.renderStaffTable();
+    }
+},
 
     // 2. QUẢN LÝ MODAL (MỞ/ĐÓNG)
     openModal: (type, id = null, data = null) => {
-        console.log("Mở modal:", type);
+    console.log("Mở modal:", type);
 
-        // Xử lý dữ liệu đặc thù cho từng loại Modal trước khi hiện
-        if (type === 'booking') {
-            const todayStr = new Date().toISOString().split('T')[0];
-            const bDateInput = document.getElementById('b-date');
-            if (bDateInput) {
-                bDateInput.setAttribute('min', todayStr);
-                const viewDate = document.getElementById('view-date').value;
-                bDateInput.value = viewDate || todayStr;
-            }
-            window.ui.toggleBookingType();
-        } 
+    // 1. XỬ LÝ DỮ LIỆU ĐẶC THÙ TRƯỚC KHI HIỆN
+    if (type === 'booking') {
+        const todayStr = new Date().toISOString().split('T')[0];
+        const bDateInput = document.getElementById('b-date');
+        if (bDateInput) {
+            bDateInput.setAttribute('min', todayStr);
+            const viewDate = document.getElementById('view-date')?.value;
+            bDateInput.value = viewDate || todayStr;
+        }
 
-        else if (type === 'manage-booking') {
+        // --- CẬP NHẬT MỚI: Reset form đặt lịch gộp chung ---
+        const fields = ['b-name', 'b-phone', 'b-cust-id', 'b-note', 'b-deposit'];
+        fields.forEach(fieldId => {
+            const el = document.getElementById(fieldId);
+            if (el) el.value = ""; 
+        });
+
+        // Reset phần lịch lặp
+        const repeatCheck = document.getElementById('b-repeat');
+        if (repeatCheck) {
+            repeatCheck.checked = false;
+            const opt = document.getElementById('repeat-options');
+            if (opt) opt.classList.add('hidden');
+        }
+
+        // Xóa các gợi ý cũ nếu còn sót lại
+        const suggestBox = document.getElementById('booking-cust-suggestions');
+        if (suggestBox) suggestBox.classList.add('hidden');
+        
+        // KHÔNG gọi window.ui.toggleBookingType() nữa vì đã gộp làm 1
+    } 
+
+    else if (type === 'manage-booking') {
     window.currentBooking = { id: id, ...data };
+    
     document.getElementById('manage-b-id').value = id;
+    document.getElementById('manage-b-id-display').innerText = id;
+
+    // 1. Nạp danh sách sân vào ô Select
+    const courtSelect = document.getElementById('manage-b-court-id');
+    if (courtSelect) {
+        const courts = window.dataCache.courts || {};
+        let html = '';
+        Object.entries(courts).forEach(([cid, c]) => {
+            html += `<option value="${cid}">${c.Ten_San || cid}</option>`;
+        });
+        courtSelect.innerHTML = html;
+        courtSelect.value = data?.Court_ID || "";
+    }
+
+    // 2. Nạp dữ liệu vào các ô nhập liệu
     document.getElementById('manage-b-name').value = data?.Ten_Khach || "";
     document.getElementById('manage-b-phone').value = data?.SDT || "";
     document.getElementById('manage-b-start').value = data?.Bat_Dau || "";
     document.getElementById('manage-b-end').value = data?.Ket_Thuc || "";
+    document.getElementById('manage-b-date').value = data?.Ngay || "";
+    document.getElementById('manage-b-deposit').value = data?.Tien_Coc || 0;
     document.getElementById('manage-b-note').value = data?.Ghi_Chu || "";
-    
-    // THÊM DÒNG NÀY ĐỂ HIỂN THỊ TIỀN CỌC CŨ
-    const depositInput = document.getElementById('manage-b-deposit');
-    if (depositInput) {
-        depositInput.value = data?.Tien_Coc || 0;
-    }
 }
 
-        else if (type === 'court') {
-            document.getElementById('court-id').value = id || "";
-            document.getElementById('c-name').value = data?.Ten_San || "";
-            if (window.app.renderCourtTypes) window.app.renderCourtTypes();
-            setTimeout(() => {
-                const selectType = document.getElementById('c-type');
-                if (selectType) selectType.value = data?.Loai_San || "";
-            }, 100);
+    else if (type === 'court') {
+        const cId = document.getElementById('court-id');
+        const cName = document.getElementById('c-name');
+        if (cId) cId.value = id || "";
+        if (cName) cName.value = data?.Ten_San || "";
+        
+        if (window.app.renderCourtTypes) window.app.renderCourtTypes();
+        setTimeout(() => {
+            const selectType = document.getElementById('c-type');
+            if (selectType) selectType.value = data?.Loai_San || "";
+        }, 100);
+    }
+
+    else if (type === 'service') {
+        const sId = document.getElementById('service-id');
+        if (sId) sId.value = id || "";
+
+        let d = data || (id ? window.dataCache?.services?.[id] : null);
+
+        const sName = document.getElementById('s-name');
+        const sPrice = document.getElementById('s-price');
+        const sStock = document.getElementById('s-stock');
+        const sImg = document.getElementById('s-img');
+
+        if (sName) sName.value = d?.Ten_Dich_Vu || "";
+        if (sPrice) sPrice.value = d?.Gia_Ban || 0;
+        if (sStock) sStock.value = d?.Ton_Kho || 0;
+        if (sImg) sImg.value = d?.Hinh_Anh || "";
+
+        if (window.app.renderServiceCategories) window.app.renderServiceCategories();
+        
+        setTimeout(() => {
+            const catSelect = document.getElementById('s-category');
+            if (catSelect) catSelect.value = d?.Loai_DV || "";
+        }, 100);
+    }
+
+    else if (type === 'customer') {
+        const idInp = document.getElementById('cust-id');
+        const viewIdInp = document.getElementById('view-cust-id');
+        const nameInp = document.getElementById('cust-name');
+        const phoneInp = document.getElementById('cust-phone');
+        const groupId = document.getElementById('group-cust-id');
+
+        if (id) {
+            if (groupId) groupId.classList.remove('hidden');
+            if (idInp) idInp.value = id;
+            if (viewIdInp) viewIdInp.value = id;
+            if (nameInp) nameInp.value = data?.Name || "";
+            if (phoneInp) phoneInp.value = data?.Phone || data?.SDT || "";
+        } else {
+            if (groupId) groupId.classList.add('hidden');
+            if (idInp) idInp.value = "";
+            if (viewIdInp) viewIdInp.value = "";
+            if (nameInp) nameInp.value = "";
+            if (phoneInp) phoneInp.value = "";
         }
+    }
 
-        else if (type === 'court-type') {
-            if (window.app.renderCourtTypes) window.app.renderCourtTypes();
-        }
+    else if (type === 'member') {
+        const mId = document.getElementById('member-id');
+        const mName = document.getElementById('m-name');
+        const mPhone = document.getElementById('m-phone');
+        const mWallet = document.getElementById('m-wallet');
 
-        // Tìm trong ui.openModal
-        else if (type === 'service') {
-            // 1. Gán ID (Nếu là thêm mới thì id = "", nếu là sửa thì id có giá trị)
-            document.getElementById('service-id').value = id || "";
+        if (mId) mId.value = id || "";
+        if (mName) mName.value = data?.Ten_HV || "";
+        if (mPhone) mPhone.value = data?.SDT || "";
+        if (mWallet) mWallet.value = data?.Vi_Du || 0;
+    }
 
-            // 2. Lấy dữ liệu từ data (truyền vào) hoặc từ cache (dựa vào id)
-            let d = data || (id ? window.dataCache?.services?.[id] : null);
+    else if (type === 'recharge') {
+        const rId = document.getElementById('recharge-member-id');
+        const rName = document.getElementById('recharge-member-name');
+        const rAmt = document.getElementById('recharge-amount');
 
-            // 3. ĐỔ DỮ LIỆU VÀO CÁC Ô INPUT (Phải có đầy đủ các dòng này)
-            document.getElementById('s-name').value = d?.Ten_Dich_Vu || "";
-            document.getElementById('s-price').value = d?.Gia_Ban || 0;
-            document.getElementById('s-stock').value = d?.Ton_Kho || 0;
-            document.getElementById('s-img').value = d?.Hinh_Anh || "";
+        if (rId) rId.value = id;
+        if (rName) rName.innerText = "Hội viên: " + (data?.Ten_HV || "");
+        if (rAmt) rAmt.value = "";
+    }
 
-            // 4. Vẽ lại danh sách phân loại vào ô Select trước
-            if (window.app.renderServiceCategories) {
-                window.app.renderServiceCategories();
-            }
-            
-            // 5. Dùng setTimeout để đợi ô Select render xong các <option> rồi mới gán giá trị
-            setTimeout(() => {
-                const catSelect = document.getElementById('s-category');
-                if (catSelect) {
-                    catSelect.value = d?.Loai_DV || "";
-                }
-            }, 100); // Tăng lên 100ms để đảm bảo an toàn
-        }
+    // 2. HIỂN THỊ MODAL (Thay thế đoạn cuối hàm openModal của bạn)
+const modalEl = document.getElementById('modal-' + type);
+if (modalEl) {
+    // Gỡ bỏ hoàn toàn các class ẩn của Tailwind
+    modalEl.classList.remove('hidden');
+    
+    // Thêm class active và ép style trực tiếp để đảm bảo nó nằm trên cùng
+    modalEl.classList.add('active');
+    modalEl.style.display = 'flex'; 
+    modalEl.style.zIndex = '9999'; 
+    
+    console.log("🚀 Đã thực thi lệnh hiển thị cho modal: " + type);
+} else {
+    console.error("❌ Không tìm thấy phần tử HTML: modal-" + type);
+}},
 
-        else if (type === 'category-manager') {
-            if (window.app && window.app.renderServiceCategories) {
-                window.app.renderServiceCategories();
-            }
+    applyPermissions: (role) => {
+        // 1. Mặc định ẩn tất cả các phần tử có đánh dấu phân quyền
+        const allProtected = document.querySelectorAll('.admin-only, .quanly-only, .thungan-only');
+        allProtected.forEach(el => el.classList.add('hidden'));
+
+        // 2. Mở khóa dựa trên vai trò thực tế
+        if (role === 'Admin') {
+            // Admin có quyền tối cao
+            allProtected.forEach(el => el.classList.remove('hidden'));
+        } 
+        else if (role === 'Quanly') {
+            // Quản lý thấy phần của Quản lý và Thu ngân
+            document.querySelectorAll('.quanly-only, .thungan-only').forEach(el => el.classList.remove('hidden'));
+        } 
+        else {
+            // Thu ngân (Staff) chỉ thấy phần dành riêng cho mình
+            document.querySelectorAll('.thungan-only').forEach(el => el.classList.remove('hidden'));
         }
         
-        else if (type === 'member') {
-            document.getElementById('member-id').value = id || "";
-            document.getElementById('m-name').value = data?.Ten_HV || "";
-            document.getElementById('m-phone').value = data?.SDT || "";
-            document.getElementById('m-wallet').value = data?.Vi_Du || 0;
-        }
-
-        else if (type === 'recharge') {
-            document.getElementById('recharge-member-id').value = id;
-            document.getElementById('recharge-member-name').innerText = "Hội viên: " + (data?.Ten_HV || "");
-            document.getElementById('recharge-amount').value = "";
-        }
-
-        const modalEl = document.getElementById('modal-' + type);
-        if (modalEl) modalEl.classList.add('active');
+        console.log(`🔐 Phân quyền: Đã áp dụng giao diện cho ${role}`);
     },
 
     closeModal: (type) => {
-        const modalEl = document.getElementById('modal-' + type);
-        if (modalEl) modalEl.classList.remove('active');
-    },
+    const modalEl = document.getElementById('modal-' + type);
+    if (modalEl) {
+        // 1. Thêm lại class ẩn của Tailwind
+        modalEl.classList.add('hidden');
+        
+        // 2. Xóa class active (nếu bạn dùng để chạy hiệu ứng fade-out)
+        modalEl.classList.remove('active');
+        
+        // 3. Ép kiểu hiển thị về none để chắc chắn không bị đè bởi class khác
+        modalEl.style.display = 'none';
+        
+        console.log("Đã đóng modal: " + type);
+    }
+},
 
     // 3. LOGIC NGHIỆP VỤ GIAO DIỆN (CHECK-IN, BOOKING, POS)
     toggleCheckinMode: () => {
@@ -311,55 +401,62 @@ toggleStockPaymentFields: () => {
     },
 
    clickTimeline: (courtId, hour) => {
-    const now = new Date();
-    const viewDateValue = document.getElementById('view-date').value;
+    const viewDateValue = document.getElementById('view-date')?.value;
     if (!viewDateValue) return;
 
+    const now = new Date();
     const viewDate = new Date(viewDateValue);
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const compareDate = new Date(viewDate);
     compareDate.setHours(0, 0, 0, 0);
 
-    // Chặn giờ quá khứ
+    // 1. Chặn giờ quá khứ
     if (compareDate < today) {
-        alert("Không thể đặt sân cho những ngày đã qua!");
+        alert("⚠️ Không thể đặt sân cho những ngày đã qua!");
         return;
     }
 
     const isToday = now.toDateString() === viewDate.toDateString();
     if (isToday && hour < now.getHours()) {
         const currentTimeStr = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
-        alert(`Không thể đặt lịch vào khung giờ đã qua! (Giờ hiện tại là ${currentTimeStr})`);
+        alert(`⚠️ Không thể đặt lịch vào khung giờ đã qua! (Giờ hiện tại là ${currentTimeStr})`);
         return; 
     }
 
-    // --- BƯỚC QUAN TRỌNG: Mở Modal trước ---
-    // Đảm bảo ID trong HTML là "modal-booking"
+    // 2. MỞ MODAL (Sử dụng cả class và ép Style để chắc chắn hiển thị)
     const modalEl = document.getElementById('modal-booking');
     if (modalEl) {
-        modalEl.classList.add('active'); // Ép hiển thị bằng CSS class
+        modalEl.classList.add('active'); 
+        modalEl.style.display = 'flex'; // Ép hiển thị flex để đè lên display: none
     } else {
-        // Nếu không tìm thấy bằng ID modal-booking, thử gọi hàm ui chung
-        window.ui.openModal('booking');
+        window.ui?.openModal('booking');
     }
 
-    // Sử dụng setTimeout ngắn hơn (50ms - 100ms) để điền dữ liệu
+    // 3. ĐIỀN DỮ LIỆU (setTimeout để đợi Modal render xong)
     setTimeout(() => {
+        // Reset các ô ID ẩn và thông tin cũ để tránh râu ông nọ cắm cằm bà kia
+        const elCustId = document.getElementById('b-cust-id');
+        const elName = document.getElementById('b-name');
+        const elPhone = document.getElementById('b-phone');
+        if (elCustId) elCustId.value = "";
+        if (elName) elName.value = "";
+        if (elPhone) elPhone.value = "";
+
         const elDate = document.getElementById('b-date');
         const elCourtSelect = document.getElementById('b-court-id');
         const elStart = document.getElementById('b-start');
         const elEnd = document.getElementById('b-end');
 
-        // Nạp danh sách sân từ bộ nhớ tạm
+        // Nạp danh sách sân
         if (elCourtSelect) {
             const courts = window.dataCache.courts || {};
             let html = '<option value="">-- Chọn sân --</option>';
             Object.entries(courts).forEach(([id, c]) => {
-                html += `<option value="${id}">${c.Ten_San}</option>`;
+                html += `<option value="${id}">${c.Ten_San || id}</option>`;
             });
             elCourtSelect.innerHTML = html;
-            elCourtSelect.value = courtId; // Mặc định chọn sân đã click
+            elCourtSelect.value = courtId; 
         }
 
         if (elDate) elDate.value = viewDateValue;
@@ -370,10 +467,9 @@ toggleStockPaymentFields: () => {
         if (elStart) elStart.value = startTime;
         if (elEnd) elEnd.value = endTime;
 
-        console.log(`✅ Đã hiển thị Form đặt sân: ${courtId}`);
-    }, 50); 
+        console.log(`✅ Đã hiển thị Form đặt sân: ${courtId} lúc ${startTime}`);
+    }, 100); 
 },
-
 // --- BỔ SUNG LOGIC GIẢM GIÁ 2 Ô SONG SONG ---
     handleDiscountInput: (type) => {
         // 1. Lấy tổng tiền gốc (sau khi đã trừ giảm hạng hội viên và cọc, nhưng trước khi giảm tay)
@@ -566,3 +662,4 @@ toggleStockPaymentFields: () => {
     }
 }
 };
+
